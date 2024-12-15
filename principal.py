@@ -47,17 +47,19 @@ def radioButton_event(comunidad_seleccionada, ruta_seleccionada, framePrincipal)
 
     tabla = ttk.Treeview(framePrincipal, columns=list(df.columns), show="headings", height=600)
 
-    tabla.heading('F. Operativa', text="Fecha")
-    tabla.column('F. Operativa', width = 75, anchor = 'c')
-    tabla.heading('Concepto', text="Concepto")
-    tabla.column('Concepto',  width = 575, anchor = 'w')
-    tabla.heading('Importe', text="Importe")
-    tabla.column('Importe',  width = 50, anchor = 'center')
-    tabla.heading('Saldo', text="Saldo")
-    tabla.column('Saldo',  width = 50, anchor = 'center')
+
+    tabla.column('F. Operativa', width = 250, anchor = 'c')
+    tabla.column('Concepto',  width = 900, anchor = 'w')
+    tabla.column('Importe',  width = 250, anchor = 'c')
+    tabla.column('Saldo',  width = 250, anchor = 'c')
+
+    tabla.heading('F. Operativa', text="Fecha", anchor='c')
+    tabla.heading('Concepto', text="Concepto", anchor='w')
+    tabla.heading('Importe', text="Importe", anchor='c')
+    tabla.heading('Saldo', text="Saldo", anchor='c')
     for _, row in df.iterrows():
         tabla.insert("", "end", values=list(row))
-    tabla.pack(fill='both', expand=True)
+    tabla.pack(fill='x')
 
 def cargar_dataframe_comunidades(ruta_carpeta):
     df_comunidades = pd.DataFrame(columns=["NombreCorto", "Ruta"])
