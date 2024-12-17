@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
-
 import customtkinter as ctk
 import xlrd
 import glob
@@ -9,16 +8,16 @@ import pandas as pd
 from pandastable import Table, TableModel, config
 from comunidades import *
 
+
 def calculartamanoPantalla(windows):
     anchoPantalla = windows.winfo_screenwidth()
     altoPantalla = windows.winfo_screenheight()
     return anchoPantalla, altoPantalla
 
+
 def tamanoLetra(windows):
     X, Y = calculartamanoPantalla(windows)
     print(X, Y)
-
-
 
 
 def centrarPantalla(windows, factorX, factorY):
@@ -30,84 +29,40 @@ def centrarPantalla(windows, factorX, factorY):
     windows.geometry(f'{anchoVentana}x{altoVentana}+{x}+{y}')
 
 
+def centrarPantallaManual(windows):
+    windows.geometry('500x500')
+
+
 def configurar_regilla(windows):
     app.grid_rowconfigure(0, weight=19)  # Primera fila (90% del alto)
     app.grid_rowconfigure(1, weight=1)  # Segunda fila (10% del alto)
     app.grid_columnconfigure(0, weight=1)  # Primera columna (20% del ancho)
     app.grid_columnconfigure(1, weight=9)  # Segunda columna (80% del ancho)
 
+
 def limpiar_frame(frame):
     for widget in frame.winfo_children():
         widget.destroy()
     return frame
 
-def generaTrieViewMovimientos(frame, df):
-    global tabla
-    df.insert(1,"Proveedor","")
-    df["Importe"] = df["Importe"].apply(lambda x: f"{x:,.2f} €")
-    df["Saldo"] = df["Saldo"].apply(lambda x: f"{x:,.2f} €")
-    style = ttk.Style()
-    style.configure("Treeview", rowheight=40, font=("Arial", 12))  # Fuente para las celdas
-    style.configure("Treeview.Heading", font=("Arial", 18, "bold"))  # Fuente para los encabezados
-    tabla = ttk.Treeview(frame, columns=list(df.columns), show="headings", height=600)
-    tabla.column('F. Operativa', width=250, anchor='c')
-    tabla.column('Proveedor', width=450, anchor='c')
-    tabla.column('Concepto', width=900, anchor='w')
-    tabla.column('Importe', width=250, anchor='c')
-    tabla.column('Saldo', width=250, anchor='c')
-    tabla.heading('F. Operativa', text="Fecha", anchor='c')
-    tabla.heading('Proveedor', text="Proveedor", anchor='c')
-    tabla.heading('Concepto', text="Concepto", anchor='c')
-    tabla.heading('Importe', text="Importe", anchor='c')
-    tabla.heading('Saldo', text="Saldo", anchor='c')
-    for _, row in df.iterrows():
-        tabla.insert("", tk.END , values=list(row))
-    return tabla
+
+def generarPandasTables(frame, df):
+    table = Table(frame, dataframe=df, showtoolbar=True, showstatusbar=True)
+    table.config
+    print(config.load_options())
+    return table
+
 
 def radioButton_event(comunidad_seleccionada, ruta_seleccionada, framePrincipal):
     global tabla
     framePrincipal= limpiar_frame(framePrincipal)
     df = pd.read_excel(ruta_seleccionada, skiprows= 8, usecols=["F. Operativa","Concepto","Importe","Saldo"], engine='xlrd')
-    tabla = generaTrieViewMovimientos(framePrincipal, df)
-    tabla.pack(fill='x')
-    tabla.bind("<Double-1>",saludar)
-    tabla.bind("<Return>",saludar)
-
-
-def saludar(event):
-    global tabla
-    id_fila = tabla.focus()
-    col = tabla.identify_column(event.x)  # Columna seleccionada
-    row = tabla.identify_row(event.y)
-    try:
-        #row_index = int(row.replace("I", ""), 16) - 1
-        col_index = int(col.replace("#", "")) - 1
-        #print(f"Fila: {row_index} Columna: {col_index}")
-    except ValueError:
-        print(f"No se puede convertir {row}")
-    valor_editar = tabla.item(id_fila, "values")[col_index]
-
-    entry = ttk.Entry(tabla, font=("Times New Roman", 18))
-    entry.insert(0,valor_editar)
-    entry.select_range(0, tk.END)
-    entry.focus()
-
-    bbox = tabla.bbox(id_fila, col_index)
-    if bbox:
-        entry.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
-
-    def guardar_cambio(event=None):
-        nuevo_valor = entry.get()
-        valores = list(tabla.item(id_fila, "values"))
-        valores[col_index] = nuevo_valor
-        tabla.item(id_fila, values=valores)
-        entry.destroy()
-
-    entry.bind("<Return>", guardar_cambio)
-    entry.bind("<FocusOut>", guardar_cambio)
-    entry.bind("<Escape>", guardar_cambio)
-
-
+    tabla = generarPandasTables(framePrincipal, df)
+    tabla.show()
+    options = {'fontsize': 14, 'rowheight':30}
+    config.apply_options(options, tabla)
+    tabla.columnwidths = {"F. Operativa":150, "Concepto":700, "Importe":150, "Saldo":150}
+    tabla.redraw()
 
 
 def cargar_dataframe_comunidades(ruta_carpeta):
@@ -154,11 +109,10 @@ def generar_frame_lateral(ventana_padre):
 
 
 def generar_frame_principal(ventana_padre):
-    framePrincipal = ctk.CTkScrollableFrame(ventana_padre, corner_radius=0, fg_color="lightblue")
-    #framePrincipal = tk.Frame(ventana_padre)
+    #framePrincipal = ctk.CTkScrollableFrame(ventana_padre, corner_radius=0, fg_color="lightblue")
+    framePrincipal = ttk.Frame(ventana_padre)
     framePrincipal.grid(row=0, column=1, sticky="nsew")
     return framePrincipal
-
 
 
 def generar_frame_botones(ventana_padre, frame):
@@ -177,23 +131,20 @@ def cargar_botones(frameBotones, frame):
 
 def principal(ventana_padre):
     ventana_padre.title("Balance Novafinkas")
-    centrarPantalla(ventana_padre, 0.50, 0.70)
+    centrarPantalla(ventana_padre, 0.80, 0.50)
+    #centrarPantallaManual(ventana_padre)
     configurar_regilla(ventana_padre)
     frameLateral = generar_frame_lateral(ventana_padre)
     framePrincipal = generar_frame_principal(ventana_padre)
     frameBotones = generar_frame_botones(app, framePrincipal)
-
     return frameLateral, framePrincipal, frameBotones
 
 '''
 Empieza aquí el programa principal
 '''
 
-
-
 tabla = None
 app = ctk.CTk()
 frameLateral, framePrincipal, frameBotones = principal(app)
-#tabla = ttk.Treeview(framePrincipal, columns=list(df.columns), show="headings", height=600)
 
 app.mainloop()
